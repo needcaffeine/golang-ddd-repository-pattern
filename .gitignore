@@ -1,0 +1,5 @@
+.build
+.coverprofile
+.coverprofile.*
+.DS_Store
+vendor/

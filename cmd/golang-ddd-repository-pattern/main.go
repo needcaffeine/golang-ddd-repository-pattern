@@ -1,15 +1,18 @@
 package main
 
 import (
-	"fmt"
 	"log"
+	"net/http"
 
 	"golang-ddd-repository-pattern/internal/database"
+	"golang-ddd-repository-pattern/internal/handler"
 	"golang-ddd-repository-pattern/internal/repository"
 	"golang-ddd-repository-pattern/internal/service"
 
 	_ "github.com/mattn/go-sqlite3"
 )
+
+var bookStoreService *service.BookstoreService
 
 // This is a fictional bookstore management system.
 func main() {
@@ -21,7 +24,7 @@ func main() {
 
 	// Dependency inject our database -> repository -> service -> controller
 	bookStoreRepository := repository.NewBookstoreRepository(db)
-	bookStoreService := service.NewBookstoreService(bookStoreRepository)
+	bookStoreService = service.NewBookstoreService(bookStoreRepository)
 
 	// Populate our store with some books.
 	bookStoreService.AddToInventory("The Hobbit", "J.R.R. Tolkien")
@@ -29,13 +32,12 @@ func main() {
 	bookStoreService.AddToInventory("The Two Towers", "J.R.R. Tolkien")
 	bookStoreService.AddToInventory("The Return of the King", "J.R.R. Tolkien")
 
-	// List all the books in our store. (This is a fictional store, don't judge.)
-	fmt.Println("Books in our store:")
-	books, err := bookStoreService.AllBooks()
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, book := range books {
-		log.Printf("%d: %s by %s", book.Id, book.Title, book.Author)
-	}
+	// Our books controller / handler will need access to the service
+	booksHandler := handler.NewHandler(bookStoreService)
+
+	// Start our server.
+	http.HandleFunc("/", booksHandler.Home)
+	http.HandleFunc("/books", booksHandler.ListBooks)
+
+	http.ListenAndServe(":3000", nil)
 }
